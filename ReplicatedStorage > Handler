@@ -1,0 +1,115 @@
+local Manager = {}
+
+local TS = game:GetService("TweenService")
+
+Manager.EraseDescription = function(letters) -- clears out text above the input line
+	for i, v in pairs(letters:GetChildren()) do
+		TS:Create(v, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+	end
+	task.wait(.1)
+	letters:ClearAllChildren()
+end
+
+Manager.EraseReaction = function(letters) -- clears out text below the input line
+	for i, v in pairs(letters:GetChildren()) do
+		TS:Create(v, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+	end
+end
+
+Manager.AddText = function(text, inFrame, bool)
+	
+	Manager.EraseReaction(inFrame.Parent.Reaction.Letters)
+	Manager.EraseDescription(inFrame.Letters)
+	
+
+	local letterSize = UDim2.fromScale(0, 0)
+	local letterAnchorPoint = Vector2.new(0, 0)
+	local textSize = 0
+
+	if inFrame.Name == "Description" then -- this estimates the letter's size whether it's above or below the input line ui
+		letterAnchorPoint = Vector2.new(0, 0)
+		letterSize = UDim2.fromScale(0.05, 0.06)
+		textSize = 30
+	elseif inFrame.Name == "Reaction" then
+		inFrame.Visible = true
+		letterAnchorPoint = Vector2.new(1, 0)
+		letterSize = UDim2.fromScale(0.04, 0.2)
+		textSize = 25
+	end
+
+	local X = 0
+	local Y = 0
+	
+	if bool then
+		for i in text:gmatch(".") do
+			-- this creates the individual letters for showing the sentences
+			local Label = Instance.new("TextLabel")
+
+			Label.Parent = inFrame.Letters
+			Label.AnchorPoint = letterAnchorPoint
+			Label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			Label.BackgroundTransparency = 1
+			Label.BorderSizePixel = 0
+			Label.Position = UDim2.fromScale(X * (letterSize.X.Scale + 0.035), (Y + 0.9))
+			Label.Size = UDim2.fromScale(0.075, 0.1)
+			Label.Font = Enum.Font.RobotoMono
+			Label.Text = i
+			Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+			Label.TextScaled = false
+			Label.TextSize = textSize
+			Label.TextTransparency = 1
+
+			if i == " " or i == "`" then
+				TS:Create(Label, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+			else
+				TS:Create(Label, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {TextTransparency = 0, BackgroundTransparency = 0.95}):Play()
+			end
+
+			X = X + 1
+
+			if ((X + 1) * letterSize.X.Scale > 2) or i == "`" then
+				Y = Y + 1
+				X = 0
+			end
+
+			task.wait(0.1)
+		end
+	else
+		for i in text:gmatch(".") do
+			-- this creates the individual letters for showing the sentences
+			local Label = Instance.new("TextLabel")
+
+			Label.Parent = inFrame.Letters
+			Label.AnchorPoint = Vector2.new(0, 0)
+			Label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			Label.BackgroundTransparency = 1
+			Label.BorderSizePixel = 0
+			Label.Position = UDim2.fromScale(X * (letterSize.X.Scale + 0.006), Y * (letterSize.Y.Scale + 0.004))
+			Label.Size = letterSize
+			Label.Font = Enum.Font.RobotoMono
+			Label.Text = i
+			Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+			Label.TextScaled = false
+			Label.TextSize = textSize
+			Label.TextTransparency = 1
+
+			if i == " " or i == "`" then
+				TS:Create(Label, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+			else
+				TS:Create(Label, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {TextTransparency = 0, BackgroundTransparency = 0.95}):Play()
+			end
+
+			X = X + 1
+
+			if ((X + 1) * letterSize.X.Scale > 2) or i == "`" then
+				Y = Y + 1
+				X = 0
+			end
+
+			task.wait(0.025)
+		end
+	end
+
+end
+
+return Manager
