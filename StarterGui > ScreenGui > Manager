@@ -1,0 +1,416 @@
+--[[
+
+THIS SCRIPT WAS MADE BY ZLURM, please excuse the mess!
+
+]]
+
+local Handler = require(game.ReplicatedStorage:WaitForChild("Handler"))
+
+local UIS = game:GetService("UserInputService")
+local CAS = game:GetService("ContextActionService")
+local RS = game:GetService("RunService")
+local TS = game:GetService("TweenService")
+local SS = game:GetService("SoundService")
+
+--[Services ^|v Variables]
+
+local Handler = require(game.ReplicatedStorage:WaitForChild("Handler"))
+
+local textArea = script.Parent.InputLine.InputText
+local inputText = script.Parent.Input
+
+local debounce = false
+local hasStarted = false
+local lightsOn = false
+
+local description = script.Parent.Description
+local reaction = script.Parent.Reaction
+
+local music = 
+	{
+		["bass1"] = script.Parent.Music.bass1;
+		["bass2"] = script.Parent.Music.bass2;
+		["riff"] = script.Parent.Music.riff;
+		["lights off 1"] = script.Parent.Music.lightsoff1;
+		["lights off 2"] = script.Parent.Music.lightsoff2;
+		["lights on 1"] = script.Parent.Music.lightson1;
+		["lights on 2"] = script.Parent.Music.lightson2;
+	}
+
+local intro = 
+	{
+		["title"] = "obey his words.";
+		["tip"] = "Press enter to type.";
+	}
+
+local tied_dark = 
+	{
+		["description"] = "You are in an empty,`dark room.`You find yourself tied`up with your arms and`hands behind your back.``Technology is advanced`enough for everything`to be activated by voice.``The only thing you could`do is``shout and scream.";
+		
+		["scream"] = "You scream in agony.`No one listened.";
+		["scream again"] = "You scream again.`It isn't working.";
+		["scream louder1"] = "The screams bellow`and echo through`the metal hallway.";
+		["scream louder2"] = "You're now aware that`you're in a spaceship.";
+		["shout_it1"] = "The action counts.`The thought doesn't.";
+		["shout_it2"] = "You have to shout it.";
+		["shout_it3"] = "Haha.";
+		
+		["shout"] = "Shout what?";
+		["lights"] = "The lights turn on.`Your pupils adjust to`the brightness.";
+		["something1"] = "You shout something.";
+		["something2"] = "It didn't recognize`what you said.";
+		["something3"] = "The lights are still`off.";
+		
+		["look"] = "Look where?`Look at what?";
+		["look around1"] = "It's pitch black.`You can't see anything.";
+		["look around2"] = "You need to turn`on the lights.";
+
+	}
+
+local tied_bright = 
+	{
+		["description1"] = "The lights flicker on`and off. You're tied down`and lying on the ground.``A metal door and a black`bag are only in your view.";
+		["description2"] = "The lights flicker on`and off.`You're standing, thinking`about what to do next.``A metal door and a black`bag are only in your view.";
+		
+		["untie1"] = "You try to untie`yourself. You can't.`It's tied well.";
+		["untie2"] = "You need something`to cut the rope.";
+		
+		["look around"] = "A metal door is`in front of you and`a black bag is right`next to you.";
+		["black bag1"] = "The black bag seems`to be reachable.`The zipper is open.";
+		["black bag2"] = "What you could see`in the bag are";
+		["black bag3"] = "a cosmetic kit,`2 pairs of clothing`and scissors.";
+	}
+
+local history = {}
+
+--[Variables ^ | v Functions]
+
+local function getInput() -- awaits text input from player after hitting 'enter' key
+	debounce = true
+	RS.RenderStepped:Wait()
+	textArea.PlaceholderText = ""
+	textArea:CaptureFocus()
+end
+
+local function sendInput() -- resets textbox input text after hitting 'enter' key
+	debounce = false
+	inputText.Value = textArea.Text
+	textArea.PlaceholderText = "w a i t i n g   f o r   i n p u t"
+end
+
+local function unclear() -- executes this code when the given text in textbox doesn't correlate with the game's dictionary (e.g. typing in 24598 will result to nothing)
+	reaction.Letters:ClearAllChildren()
+	for i, v in pairs(reaction.Unavailable:GetChildren()) do
+		-- makes the "INSTRUCTION NOT CLEAR" visible
+		
+		v.Visible = true
+		v.BackgroundTransparency = 0.9
+		v.TextTransparency = 0
+	end
+	for i = 1,7 do
+		reaction.Visible = not reaction.Visible
+		task.wait(math.random()*0.1)
+	end
+	reaction.Visible = true
+	task.wait(1)
+	Handler.EraseReaction(reaction.Unavailable) -- this then makes the whole text fade out
+end
+
+local function turnLightsOn() -- makes light flicker at first then keeps itself on
+	for i, v in pairs(game.Workspace.Lights:GetDescendants()) do
+		if v:IsA("SurfaceLight") then
+			TS:Create(v, TweenInfo.new(0.05, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Brightness = 1}):Play()
+			TS:Create(v.Parent, TweenInfo.new(0.05, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Color = Color3.fromRGB(163, 162, 165)}):Play()
+			task.wait(0.02)
+			TS:Create(v, TweenInfo.new(0.05, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Brightness = 0}):Play()
+			TS:Create(v.Parent, TweenInfo.new(0.05, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Color = Color3.fromRGB(0, 0, 0)}):Play()
+			task.wait(0.075)
+			TS:Create(v, TweenInfo.new(0.1, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Brightness = 1}):Play()
+			TS:Create(v.Parent, TweenInfo.new(0.1, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Color = Color3.fromRGB(163, 162, 165)}):Play()
+		end
+	end
+end
+
+local function musicSync() -- syncing the whole individual music parts to the main motif (bass riff)
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			for _, v in ipairs(music) do
+				if v.Name ~= "riff" then
+					v.TimePosition = music.bass1.TimePosition
+				end
+			end
+		end
+	end)
+end
+
+local function playMusic()
+	task.spawn(function()
+		while true do
+
+			music.bass1:Play()	
+			music.riff:Play()
+			task.wait(53.33)
+			music.bass2:Play()
+			task.wait(53.33)
+
+		end
+	end)
+
+	task.wait(5.33)
+
+	task.spawn(function()
+
+		music["lights off 1"].Volume = 0
+		music["lights off 2"].Volume = 0
+
+		music["lights on 1"].Volume = 0
+		music["lights on 2"].Volume = 0
+
+		music["lights off 1"].TimePosition = 0
+		music["lights off 2"].TimePosition = 0
+
+		music["lights on 1"].TimePosition = 0
+		music["lights on 2"].TimePosition = 0
+
+	end)
+
+	task.spawn(function()
+		while true do
+
+			music["lights off 1"]:Play()
+			task.wait(53.33)
+			music["lights off 2"]:Play()
+			task.wait(53.33)
+
+		end
+	end)
+
+	task.spawn(function()
+		while true do
+
+			music["lights on 1"]:Play()
+			task.wait(53.33)
+			music["lights on 2"]:Play()
+			task.wait(53.33)
+
+		end
+	end)
+
+	--[[
+	spawn(function()
+		for i = 0, 1, 0.1 do
+			task.wait(i)
+			music["bass1"].TimePosition = i
+			music["bass2"].TimePosition = i
+			music["lights off 1"].TimePosition = i
+			music["lights off 2"].TimePosition = i
+			music["lights on 1"].TimePosition = i
+			music["lights on 2"].TimePosition = i
+			print(i)
+			if i == 1 then
+				break
+			end
+		end
+	end)
+	]]
+end
+
+for _, v in ipairs(music) do -- checks if the music is fully loaded in
+	if v:IsA("Sound") then
+		if v.IsLoaded == false then return end
+	end
+end
+
+UIS.InputBegan:Connect(function(Key)
+	if Key.KeyCode == Enum.KeyCode.Return then
+		-- if debounce is true, the sendInput() will send whats in the text from the textbox
+		-- if debounce is false, the getInput() will reset whatever is on the textbox and allow player to put in command
+		if debounce == false then
+			getInput()
+		elseif debounce == true then
+			sendInput()
+		end
+	end
+end)
+
+
+--[/////]--
+
+musicSync()
+
+repeat wait() until game:IsLoaded()
+
+-- making sure the camera will set itself to the parts cframe
+repeat wait() workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+until workspace.CurrentCamera.CameraType == Enum.CameraType.Scriptable
+
+workspace.CurrentCamera.CFrame = workspace.CamPart.CFrame
+workspace.CurrentCamera.FieldOfView = 50
+
+playMusic()
+
+-- this will add the text from the dictionary to the respective UI area
+Handler.AddText(intro["title"], script.Parent.Description, true)
+Handler.AddText(intro["tip"], script.Parent.Reaction)
+
+
+inputText:GetPropertyChangedSignal("Value"):Connect(function() -- checks if player has pressed 'enter' key
+	local text = string.lower(inputText.Value)
+	table.insert(history, text)
+	
+	-- all the if statements will check whether the command is valid or not. if it isn't, it will fire unclear()
+	if (text == "play" or text == "start" or text == "begin") and hasStarted == false then
+		hasStarted = true
+		
+		TS:Create(music["lights off 1"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 1}):Play()
+		TS:Create(music["lights off 2"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 1}):Play()
+		Handler.AddText(tied_dark["description"], script.Parent.Description)
+		
+	--[lights are off]
+
+	elseif text == "scream" and lightsOn == false then
+		
+		Handler.AddText(tied_dark[text], script.Parent.Reaction)
+
+	elseif text == "scream again" and lightsOn == false then
+
+		Handler.AddText(tied_dark[text], script.Parent.Reaction)
+		
+	elseif (text:match("scream") and text:match("loud")) and lightsOn == false then
+
+		Handler.AddText(tied_dark["scream louder1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_dark["scream louder2"], script.Parent.Reaction)
+		
+	elseif text == "shout" and lightsOn == false then
+
+		Handler.AddText(tied_dark[text], script.Parent.Reaction)
+		
+	elseif text == "shout it" and lightsOn == false then
+
+		Handler.AddText(tied_dark["shout_it3"], script.Parent.Reaction)
+		
+	elseif (text:match("light")) and (history[#history - 1] ~= "shout" and lightsOn == false) then
+
+		Handler.AddText(tied_dark["shout_it1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_dark["shout_it2"], script.Parent.Reaction)
+		
+	elseif (text:match("shout") and text:match("light")) and lightsOn == false then
+
+		Handler.AddText(tied_dark["lights"], script.Parent.Reaction)
+		
+		TS:Create(music["lights off 1"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 0}):Play()
+		TS:Create(music["lights off 2"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 0}):Play()
+		TS:Create(music["lights on 1"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 1}):Play()
+		TS:Create(music["lights on 2"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 1}):Play()
+		
+		task.wait(1)
+		lightsOn = true
+		turnLightsOn()
+		Handler.AddText(tied_bright["description1"], script.Parent.Description)
+		
+	elseif text == "shout something" and lightsOn == false then
+
+		Handler.AddText(tied_dark["something1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_dark["something2"], script.Parent.Reaction)
+		task.wait(1.5)
+		Handler.AddText(tied_dark["something3"], script.Parent.Reaction)
+		
+	--[responses to responses]
+		
+	elseif ((text == "around") and history[#history - 1] == "look") and lightsOn == false then
+
+		Handler.AddText(tied_dark["look around1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_dark["look around2"], script.Parent.Reaction)
+		
+	elseif (text == "something") and history[#history - 1] == "shout" then
+
+		Handler.AddText(tied_dark["something1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_dark["something2"], script.Parent.Reaction)
+		task.wait(1.5)
+		Handler.AddText(tied_dark["something3"], script.Parent.Reaction)
+		
+	elseif (text == "it" or text == "what") and history[#history - 1] == "shout" then
+
+		Handler.AddText(tied_dark["shout_it3"], script.Parent.Reaction)
+		
+	elseif (text == "shout it") and (history[#history - 1]:match("light")) then
+
+		Handler.AddText(tied_dark["shout_it3"], script.Parent.Reaction)
+		
+	elseif (text:match("light")) and history[#history - 1] == "shout" then
+
+		Handler.AddText(tied_dark["lights"], script.Parent.Reaction)
+		task.wait(1)
+		TS:Create(music["lights off 1"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 0}):Play()
+		TS:Create(music["lights off 2"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 0}):Play()
+		TS:Create(music["lights on 1"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 1}):Play()
+		TS:Create(music["lights on 2"], TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Volume = 1}):Play()
+		lightsOn = true
+		turnLightsOn()
+		Handler.AddText(tied_bright["description1"], script.Parent.Description)
+		
+	--
+
+	elseif (text == "look around") and lightsOn == false then
+
+		Handler.AddText(tied_dark["look around1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_dark["look around2"], script.Parent.Reaction)
+		
+
+	elseif text == "look" then
+
+		Handler.AddText(tied_dark[text], script.Parent.Reaction)
+		
+		
+		
+	--[lights are on]
+		
+		
+	elseif (text == "look around") and lightsOn == true then
+
+		Handler.AddText(tied_bright["look around"], script.Parent.Reaction)
+		
+	elseif ((text:match("free") or text:match("untie")) and (text:match("yourself") or text:match("myself"))) and lightsOn == true then
+
+		Handler.AddText(tied_bright["untie1"], script.Parent.Reaction)
+		task.wait(2)
+		Handler.AddText(tied_bright["untie2"], script.Parent.Reaction)
+		
+	elseif (text:match("look") and text:match("inside") and text:match("bag")) and lightsOn == true then
+
+		Handler.AddText(tied_bright["black bag1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_bright["black bag2"], script.Parent.Reaction)
+		task.wait(0.2)
+		Handler.AddText(tied_bright["black bag3"], script.Parent.Reaction)
+
+		
+	--[responses to responses]
+		
+	elseif ((text == "around") and history[#history - 1] == "look") and lightsOn == true then
+
+		Handler.AddText(tied_bright["look around"], script.Parent.Reaction)
+		
+	elseif ((text:match("bag")) and history[#history - 1] == "look") and lightsOn == true then
+
+		Handler.AddText(tied_bright["black bag1"], script.Parent.Reaction)
+		task.wait(1)
+		Handler.AddText(tied_bright["black bag2"], script.Parent.Reaction)
+		task.wait(0.2)
+		Handler.AddText(tied_bright["black bag3"], script.Parent.Reaction)
+	
+		
+	--[did not understand]
+
+	elseif text ~= "" then
+		unclear()
+	end
+
+end)
